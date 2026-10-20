@@ -4,7 +4,19 @@
 
 MCP client → local stdio server → Bamboo REST API.
 
-Five tools list plans, read builds and job logs, wait for results, and trigger existing builds. `src/stdio.ts` starts the server; `src/tools.ts` exposes MCP tools; `src/bamboo.ts` handles Bamboo requests; `src/config.ts` validates environment settings; `src/utils.ts` provides shared helpers. The Node launcher uses `tsx`, so no build step is needed.
+```text
+bamboo-mcp/
+├── bin/bamboo-mcp.mjs  # Node launcher (tsx, no build step)
+├── src/
+│   ├── stdio.ts       # Server entry point
+│   ├── tools.ts       # MCP tool definitions
+│   ├── bamboo.ts      # Bamboo REST client and safety rules
+│   ├── config.ts      # Environment validation and allowlists
+│   └── utils.ts       # Shared helpers
+└── test/              # Unit and MCP integration tests
+```
+
+Five tools list plans, read builds and job logs, wait for results, and trigger existing builds.
 
 ## Setup
 
