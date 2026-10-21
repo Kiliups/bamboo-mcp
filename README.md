@@ -27,7 +27,7 @@ Five tools list plans, read builds and job logs, wait for results, and trigger e
    | --- | --- |
    | `BAMBOO_URL` | Required HTTPS base URL, including any context path, without `/rest/api`. |
    | `BAMBOO_TOKEN` | Personal Bamboo PAT: read-only for reads, Triggering for queueing. Keep it out of committed files. |
-   | `BAMBOO_ALLOWED_PLANS` | Exact comma-separated plan keys. Empty disables queueing; omitted defaults to `*` (any plan). Set explicitly. |
+   | `BAMBOO_ALLOWED_PLANS` | Exact comma-separated plan keys or project patterns such as `PROJ-*`. Empty disables queueing; omitted defaults to `*` (any plan). Set explicitly. |
    | `BAMBOO_ALLOWED_VARIABLES` | Exact comma-separated override names. Omitted allows none. |
 
 3. Register a **local stdio** MCP server in your client using this command:

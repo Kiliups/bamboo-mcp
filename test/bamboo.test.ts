@@ -21,6 +21,48 @@ describe("configuration and validation", () => {
       new Config({ ...env, BAMBOO_ALLOWED_PLANS: "" }).allowedPlans.size,
     ).toBe(0);
   });
+  test("project patterns allow current and future plans only in matching projects", async () => {
+    const projects = new Config({
+      ...env,
+      BAMBOO_ALLOWED_PLANS: "PROJ-*,TEAM-*,OTHER-PLAN",
+    });
+    for (const key of [
+      "PROJ-MAIN",
+      "PROJ-BRANCH1",
+      "PROJ-NEW9999",
+      "TEAM-BRANCH123",
+      "OTHER-PLAN",
+    ]) {
+      expect(projects.canStart(key)).toBe(true);
+    }
+    for (const key of [
+      "PROJX-MAIN",
+      "XTEAM-PLAN",
+      "OTHER-BRANCH",
+      "proj-MAIN",
+      "PROJ-",
+      "PROJ-MAIN-JOB",
+    ]) {
+      expect(projects.canStart(key)).toBe(false);
+    }
+    let calls = 0;
+    const api = new Bamboo(projects, env.BAMBOO_TOKEN, {
+      fetch: async (url) => {
+        calls++;
+        const key = url.pathname.split("/").at(-1);
+        return response({ buildResultKey: `${key}-42`, buildNumber: 42 });
+      },
+    });
+    for (const key of ["PROJ-NEW9999", "TEAM-BRANCH123"]) {
+      expect(await api.startBuild({ plan_key: key })).toMatchObject({
+        outcome: "queued",
+      });
+    }
+    await expect(
+      api.startBuild({ plan_key: "OTHER-BRANCH" }),
+    ).rejects.toThrow("BAMBOO_ALLOWED_PLANS");
+    expect(calls).toBe(2);
+  });
   test("bare * allows every plan; variables accept exact names only", () => {
     expect(
       new Config({ ...env, BAMBOO_ALLOWED_PLANS: "*" }).allowAllPlans,
@@ -106,9 +148,18 @@ describe("configuration and validation", () => {
     expect(
       new Config({ ...env, BAMBOO_TOKEN: "must-not-be-captured" }),
     ).not.toHaveProperty("token");
-    expect(
-      () => new Config({ ...env, BAMBOO_ALLOWED_PLANS: "PROJ-*" }),
-    ).toThrow("invalid entry");
+    for (const plans of [
+      "PROJ-PLAN*",
+      "PR*-*",
+      "*-PLAN",
+      "PROJ-**",
+      "proj-*",
+      "PROJ-*,*",
+    ]) {
+      expect(() => new Config({ ...env, BAMBOO_ALLOWED_PLANS: plans })).toThrow(
+        "invalid entry",
+      );
+    }
     expect(
       () => new Config({ ...env, BAMBOO_ALLOWED_VARIABLES: "target," }),
     ).toThrow("invalid entry");

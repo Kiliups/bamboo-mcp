@@ -49,7 +49,11 @@ export class Config {
     this.allowAllPlans = plans.trim() === "*";
     this.allowedPlans = this.allowAllPlans
       ? new Set()
-      : exactList(plans, "BAMBOO_ALLOWED_PLANS", planKey);
+      : exactList(
+          plans,
+          "BAMBOO_ALLOWED_PLANS",
+          planKey.or(z.string().max(128).regex(/^[A-Z][A-Z0-9]*-\*$/)),
+        );
     this.allowedVariables = exactList(
       env.BAMBOO_ALLOWED_VARIABLES,
       "BAMBOO_ALLOWED_VARIABLES",
@@ -58,7 +62,12 @@ export class Config {
   }
 
   canStart(key: string): boolean {
-    return this.allowAllPlans || this.allowedPlans.has(key);
+    return (
+      this.allowAllPlans ||
+      this.allowedPlans.has(key) ||
+      (planKey.safeParse(key).success &&
+        this.allowedPlans.has(`${key.split("-")[0]}-*`))
+    );
   }
 
   allowsVariable(name: string): boolean {

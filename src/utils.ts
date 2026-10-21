@@ -59,9 +59,7 @@ export function exactList(
 ): Set<string> {
   const entries = commaList(value);
   if (entries.some((entry) => !schema.safeParse(entry).success)) {
-    throw new Error(
-      `${name} contains an invalid entry; use exact comma-separated names, not patterns.`,
-    );
+    throw new Error(`${name} contains an invalid entry.`);
   }
   return new Set(entries);
 }
